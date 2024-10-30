@@ -3,19 +3,33 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { CreateOrderDto, OrderPaginationDto, StatusDto } from './dto';
 import { PaginationDto } from 'src/common';
+import { NATS_SERVICE } from 'src/config';
  
 @Controller('orders') 
 export class OrdersController {
-  constructor(@Inject('ORDER_SERVICE') private readonly ordersClient: ClientProxy) {}
-
+  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+  
   @Post()
   create(@Body() createOrderDto: CreateOrderDto) {
-    return this.ordersClient.send('createOrder', createOrderDto);
+    return this.client.send('createOrder', createOrderDto);
   }
 
   @Get()
-  findAll(@Query() orderPaginationDto: OrderPaginationDto) {
-    return this.ordersClient.send('findAllOrders', orderPaginationDto);
+  async findAll(@Query() orderPaginationDto: OrderPaginationDto) {
+
+
+    try {
+      const orders = await firstValueFrom(
+        
+
+          this.client.send('findAllOrders', orderPaginationDto)
+        
+      ) 
+      return orders;
+    } catch (error) {
+      throw new RpcException(error)
+      
+    }
   }
 
   @Get('id/:id')
@@ -24,14 +38,11 @@ export class OrdersController {
     try {
       const order = await firstValueFrom(
 
-        this.ordersClient.send('findOneOrder', {id})
+        this.client.send('findOneOrder', {id})
       )
       return order;
     } catch (error) {
-      throw new RpcException({
-        message: 'Order with id ' + id + ' not found',
-        status: HttpStatus.BAD_REQUEST,
-      });
+      throw new RpcException(error);
     }
   }
 
@@ -44,17 +55,14 @@ export class OrdersController {
     try {
       
 
-        return this.ordersClient.send('findAllOrders', {
+        return this.client.send('findAllOrders', {
           ...paginationDto,
           status: statusDto.status,
         })
       
       
     } catch (error) {
-      throw new RpcException({
-        message: 'Order with status ' + statusDto.status + ' not found',
-        status: HttpStatus.BAD_REQUEST,
-      });
+      throw new RpcException(error);
     }
   }
 
@@ -63,7 +71,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string, 
     @Body() updateStatusOrderDto: StatusDto) {
 
-    return this.ordersClient.send('changeOrderStatus', {id, status:updateStatusOrderDto.status});
+    return this.client.send('changeOrderStatus', {id, status:updateStatusOrderDto.status});
   }
 
 }

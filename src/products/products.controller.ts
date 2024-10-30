@@ -4,20 +4,21 @@ import { catchError, firstValueFrom } from 'rxjs';
 import { CreateProductDto } from 'src/common';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { UpdateProductDto } from 'src/common/dto/update-product.dto';
+import { NATS_SERVICE, PRODUCT_SERVICE } from 'src/config';
 
 
 @Controller('products')
 export class ProductsController {
-  constructor(@Inject('PRODUCT_SERVICE') private readonly productsClient: ClientProxy) {}
+  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
 
   @Post()
   async createProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productsClient.send({ cmd: 'createProduct'}, createProductDto);
+    return this.client.send({ cmd: 'createProduct'}, createProductDto);
   }
 
   @Get()
   async findAllProducts(@Query() paginationDto: PaginationDto) {
-    return this.productsClient.send({ cmd: 'findAll'}, paginationDto);
+    return this.client.send({ cmd: 'findAll'}, paginationDto);
   }
 
   @Get(':id')
@@ -33,25 +34,22 @@ export class ProductsController {
       
        const product = await firstValueFrom(
 
-         this.productsClient.send({ cmd: 'findOne'}, {id})
+         this.client.send({ cmd: 'findOne'}, {id})
        )
        return product;
 
      } catch (error) {
-       throw new RpcException({
-         message: 'Product with id ' + id + ' not found',
-         status: HttpStatus.BAD_REQUEST,
-       });
+       throw new RpcException(error);
      }
 
   }
-
+ 
   @Patch(':id')
   async updateProduct(
     @Body() updateProductDto: UpdateProductDto, 
     @Param('id', ParseIntPipe) id: number
   ) {
-    return this.productsClient.send(
+    return this.client.send(
       { cmd: 'updateProduct'}, 
       {id, ...updateProductDto}
     ).pipe(
@@ -63,7 +61,7 @@ export class ProductsController {
 
   @Delete(':id')
   async deleteProduct(@Param('id') id: string) {
-    return this.productsClient.send(
+    return this.client.send(
       { cmd: 'removeProduct'},
       {id}).pipe(
         catchError((error) => {
