@@ -11,7 +11,7 @@ export class RpcCustomExceptionFilter implements ExceptionFilter {
     const response = context.getResponse();
     const rpcError = exception.getError();
 
-    //this.logger.error('Error RPC: ', rpcError);
+    this.logger.error('Error RPC: ', rpcError);
 
     if (rpcError.toString().includes('Empty response')) {
       return response.status(500).json({
