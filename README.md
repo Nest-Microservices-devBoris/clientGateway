@@ -14,3 +14,14 @@ docker run -d --name nats-server -p 4222:4222 -p 8223:8222 nats
 5. Tener corriendo los servicios que se van a consumir
 6. Ejecutar el comando `npm run start:dev`
 
+## Nats
+Para levantar el servidor de NATS, ejecutar el siguiente comando:
+```bash
+docker run -d --name nats-server -p 4222:4222 -p 8223:8222 nats
+```
+
+## prod
+Levantar imagen de producción del client-gateway
+```bash
+docker build -f dockerfile.prod -t client-gateway .
+```
